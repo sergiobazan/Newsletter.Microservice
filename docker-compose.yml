@@ -8,6 +8,14 @@ services:
       dockerfile: Newsletter.API/Dockerfile
     ports:
       - "5001:443"
+
+  newsletter.reporting.api:
+    image: ${DOCKER_REGISTRY-}newsletterreportingapi
+    build:
+      context: .
+      dockerfile: Newsletter.Reporting.Api/Dockerfile
+    ports:
+        - "6001:443"
          
   newsletter.db:
     image: postgres
