@@ -28,3 +28,14 @@ services:
         - 5432:5432
     volumes:
         - ./.containers/newsletter-data:/var/lib/postgresql/data
+
+  newsletter-mq:
+    image: rabbitmq:management
+    container_name: Newsletter.RabbitMq
+    hostname: newsletter-mq
+    volumes:
+        - ./.containers/queue/data/:/var/lib/rabbitmq
+        - ./.containers/queee/log/:/var/log/rabbitmq
+    environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest

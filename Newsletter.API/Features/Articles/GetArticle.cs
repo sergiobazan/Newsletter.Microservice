@@ -1,4 +1,6 @@
 ﻿using Carter;
+using Contracts;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Newsletter.Api.Shared;
@@ -11,7 +13,7 @@ public static class GetArticle
 {
     public sealed record Query(Guid Id) : IRequest<Result<ArticleResponse>>;
 
-    internal sealed class Handler(ApplicationDbContext context) : IRequestHandler<Query, Result<ArticleResponse>>
+    internal sealed class Handler(ApplicationDbContext context, IPublishEndpoint publishEndpoint) : IRequestHandler<Query, Result<ArticleResponse>>
     {
         public async Task<Result<ArticleResponse>> Handle(Query request, CancellationToken cancellationToken)
         {
@@ -37,6 +39,12 @@ public static class GetArticle
                     "The article with the given Id was not found"));
             }
 
+            await publishEndpoint.Publish(
+                new ArticleViewedEvent(
+                    article.Id,
+                    DateTime.UtcNow),
+                cancellationToken);
+
             return article;
         }
     }
@@ -56,7 +64,7 @@ public class GetArticleEndpoint : ICarterModule
                 return Results.NotFound(result.Error);
             }
 
-            return Results.Ok(result);
+            return Results.Ok(result.Value);
         });
     }
 }

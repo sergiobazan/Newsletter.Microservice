@@ -6,6 +6,8 @@ using Newsletter.Api.Shared;
 using Newsletter.API.Contracts;
 using Newsletter.API.Database;
 using Newsletter.API.Entities;
+using MassTransit;
+using Contracts;
 
 namespace Newsletter.API.Features.Articles;
 
@@ -22,7 +24,11 @@ public static class CreateArticle
         }
     }
 
-    internal sealed class Handler(ApplicationDbContext context, IValidator<Command> validator) : IRequestHandler<Command, Result<Guid>>
+    internal sealed class Handler(
+        ApplicationDbContext context, 
+        IValidator<Command> validator,
+        IPublishEndpoint publishEndpoint) 
+        : IRequestHandler<Command, Result<Guid>>
     {
         public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -47,6 +53,12 @@ public static class CreateArticle
             context.Add(article);
 
             await context.SaveChangesAsync(cancellationToken);
+
+            await publishEndpoint.Publish(
+                new ArticleCreatedEvent(
+                    article.Id,
+                    article.CreatedOnUtc),
+                cancellationToken);
 
             return article.Id;
         }

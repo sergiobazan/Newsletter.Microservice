@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Newsletter.API.Database;
 using Newsletter.API.Extentions;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,22 @@ builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(assemb
 builder.Services.AddCarter();
 
 builder.Services.AddValidatorsFromAssembly(assembly);
+
+builder.Services.AddMassTransit(config =>
+{
+    config.SetKebabCaseEndpointNameFormatter();
+
+    config.UsingRabbitMq((context, configurator) =>
+    {
+        configurator.Host(new Uri(builder.Configuration["MessageBroker:Host"]!), h =>
+        {
+            h.Username(builder.Configuration["MessageBroker:Username"]);
+            h.Password(builder.Configuration["MessageBroker:Password"]);
+        });
+
+        configurator.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 
